@@ -22,8 +22,8 @@ DRAWING_CONFIG = {
             'focus': [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28],
             'attributes': {
                 'color': (255, 255, 255),  # Default white color for keypoints
-                'radius': 15,
-                'circle_thickness': 2,
+                'radius': 20,
+                'circle_thickness': 3,
                 'outline_color': (0, 0, 0),  # Black outline
                 'outline_thickness': 2,
                 'fill_circle': False
@@ -52,7 +52,7 @@ DRAWING_CONFIG = {
                 'line_thickness': 3,
                 'outline_color': (0, 0, 0),  # White outline
                 'outline_thickness': 2,
-                'spacing': 15
+                'spacing': 20
             },
             'special_attributes': {}
         }

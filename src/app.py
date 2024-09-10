@@ -11,6 +11,9 @@ import torch
 print(torch.cuda.is_available())
 
 app = Flask(__name__)
+app.config['DEBUG'] = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 CORS(app)  # Enable Cross-Origin Resource Sharing
 print("CORS enabled")
 
@@ -56,32 +59,55 @@ def generate_frames():
         results = model(frame)
         boxes = results[0].boxes.cpu().numpy()  # Extract bounding boxes
 
+        # Get the center of the frame
+        frame_center_x = frame.shape[1] // 2
+        frame_center_y = frame.shape[0] // 2
+
+        # Find the box closest to the center of the frame
+        closest_box = None
+        min_distance = float('inf')
+
         for box in boxes:
             if box.cls == 0:  # YOLO class 0 corresponds to 'person'
+                # Get the center of the bounding box
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
+                box_center_x = (x1 + x2) // 2
+                box_center_y = (y1 + y2) // 2
 
-                # Crop the detected person from the frame
-                person_frame = frame[y1:y2, x1:x2]
+                # Calculate the Euclidean distance from the center of the frame
+                distance = ((box_center_x - frame_center_x) ** 2 + (box_center_y - frame_center_y) ** 2) ** 0.5
 
-                # Convert cropped person frame to RGB for MediaPipe processing
-                person_rgb = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
+                # Check if this box is closer to the center
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_box = (x1, y1, x2, y2)
 
-                # Apply MediaPipe Pose Estimation
-                results_pose = mp_pose.process(person_rgb)
+        # Process only the closest box
+        if closest_box:
+            x1, y1, x2, y2 = closest_box
 
-                # Get keypoints as a list of (x, y) pairs
-                if results_pose.pose_landmarks:
-                    keypoints = [(lm.x, lm.y) for lm in results_pose.pose_landmarks.landmark]
+            # Crop the detected person from the frame
+            person_frame = frame[y1:y2, x1:x2]
 
-                    # Draw keypoints and connections using the custom drawing utilities
-                    drawing.draw_keypoints_and_connections(person_frame, keypoints)
+            # Convert cropped person frame to RGB for MediaPipe processing
+            person_rgb = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
 
-                    # Apply face blur only if the checkbox is enabled
-                    if face_blur_enabled:
-                        drawing.blur_face(person_frame, keypoints)
+            # Apply MediaPipe Pose Estimation
+            results_pose = mp_pose.process(person_rgb)
 
-                # Place the processed person frame back into the original frame
-                frame[y1:y2, x1:x2] = person_frame
+            # Get keypoints as a list of (x, y) pairs
+            if results_pose.pose_landmarks:
+                keypoints = [(lm.x, lm.y) for lm in results_pose.pose_landmarks.landmark]
+
+                # Draw keypoints and connections using the custom drawing utilities
+                drawing.draw_keypoints_and_connections(person_frame, keypoints)
+
+                # Apply face blur only if the checkbox is enabled
+                if face_blur_enabled:
+                    drawing.blur_face(person_frame, keypoints)
+
+            # Place the processed person frame back into the original frame
+            frame[y1:y2, x1:x2] = person_frame
 
         # Encode the frame to JPEG
         ret, buffer = cv2.imencode('.jpg', frame)
@@ -122,6 +148,8 @@ def set_face_blur(state):
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # return True
+
 
 # Main route
 
@@ -132,4 +160,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))

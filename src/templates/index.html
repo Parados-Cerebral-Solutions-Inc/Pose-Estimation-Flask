@@ -5,25 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Parados AI</title>
 
+    <!-- Bootstrap CDN for forms and components, but without utility classes -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Bootstrap JS and dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
     <!-- Using the time variable passed from Flask without parentheses -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v={{ time }}" />
   </head>
   <body>
-    <!-- Camera selection dropdown at the top -->
-    <div class="camera-select-container">
-      <select id="cameraSelect"></select>
-    </div>
+    <header class="header">
+      <h2>
+        The World’s
+        <span class="textAccent">Most Accessible</span>
+        Movement Intelligence Platform
+      </h2>
+    </header>
 
-    <!-- Checkbox for face blur -->
-    <div class="checkbox-container">
-      <input type="checkbox" id="faceBlur" />
-      <label for="faceBlur" class="checkbox-label">Face Blur</label>
-    </div>
+    <div class="main-section">
+      <!-- Video feed container -->
+      <div class="video-container">
+        <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed" />
+      </div>
 
-    <!-- Video feed container with logo overlay -->
-    <div class="video-container">
-      <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed" />
-      <img class="logo-overlay" src="{{ url_for('static', filename='logo-b.png') }}" alt="Company Logo" />
+      <!-- Right-side section -->
+      <div class="right-section">
+        <!-- Placeholder Image -->
+
+        <div class="cta">
+          <p>To learn more or get in touch:</p>
+          <div class="image-container">
+            <img class="placeholder-image" src="static/qr.png" alt="Placeholder" />
+          </div>
+        </div>
+
+        <div class="options">
+          <div class="form-check form-switch checkbox-container">
+            <input class="form-check-input" type="checkbox" id="faceBlur" />
+            <label class="form-check-label" for="faceBlur">Anonymize</label>
+          </div>
+
+          <!-- Camera selection dropdown -->
+          <div class="camera-select-container">
+            <select id="cameraSelect" class="select-item"></select>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Script with cache busting timestamp -->

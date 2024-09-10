@@ -1,81 +1,176 @@
 /* General body style */
+html {
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  background-color: #1e1e1e;
+  background-color: #000;
   color: white;
+  margin: 0;
+  height: 100vh;
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.header {
+  height: 120px;
+  width: 100%;
+
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  padding: 20px;
+  background-color: #0e0e0e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+header h2 {
   margin: 0;
+  font-size: 48px;
+  font-weight: 600;
 }
 
-/* Style for the camera selection */
-.camera-select-container {
-  width: 100%;
+.textAccent {
+  color: #0b8ac4;
+}
+
+.main-section {
   display: flex;
-  justify-content: center;
-  padding: 20px 0;
-  background-color: #1e1e1e;
-  box-shadow: 0 4px 8px #1e1e1e;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  box-sizing: border-box;
+  height: calc(100% - 120px);
 }
 
-/* Style for the dropdown */
-select {
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
-  background-color: #1e1e1e;
-  color: white;
-  font-size: 16px;
+.main-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('background.png');
+  background-size: cover;
+  background-position: top right;
+  background-repeat: no-repeat;
+  opacity: 0; /* 50% opacity */
+  z-index: -1; /* Ensures the image stays behind the content */
+  transform: translateX(-10%); /* Start off-screen to the left */
+  animation: slideIn 1s ease-in-out forwards; /* Apply the animation */
 }
 
-/* Style for the checkbox */
-.checkbox-container {
-  padding: 10px;
-}
-
-.checkbox-label {
-  margin-left: 8px;
+/* Define the animation */
+@keyframes slideIn {
+  to {
+    transform: translateX(0); /* End at the normal position */
+    opacity: 0.2;
+  }
 }
 
 /* Container for video and logo */
 .video-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+  flex: 1;
   height: 100%;
-  max-width: 90%; /* Limit width for large screens */
-  max-height: 80vh; /* Limit height for responsiveness */
+  margin-right: 20px;
   background-color: #1e1e1e;
   border-radius: 15px;
-  box-shadow: 0 4px 8px #1e1e1e;
   overflow: hidden;
 }
 
-/* Style for the video feed */
 .video-feed {
   width: 100%;
-  height: auto;
+  height: 100%;
   border-radius: 10px;
-  object-fit: cover; /* Maintain aspect ratio */
+  object-fit: cover;
 }
 
-/* Style for the logo overlay */
-.logo-overlay {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 100px;
-  opacity: 0.8;
+.right-section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+
+  min-width: 320px;
 }
 
-/* Adjust the layout for mobile screens */
+.cta {
+  font-size: 32px;
+  word-wrap: break-word;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.image-container {
+  resize: vertical;
+  overflow: auto;
+}
+
+/* Placeholder image for the right side */
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 15px;
+}
+
+.placeholder-image {
+}
+
+.camera-select-container {
+  color: #fff; /* Light text for contrast */
+}
+
+/* Dark variant select */
+.select-item {
+  background-color: #1e1e1e; /* Dark background for select */
+  color: #bebebe; /* White text */
+  border: 1px solid #444; /* Border to blend with dark theme */
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 16px;
+  width: 100%;
+}
+
+.options {
+  justify-self: flex-end;
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 24px;
+  color: #bebebe;
+}
+
+.checkbox-container label {
+  margin-top: 4px;
+}
+
+/* Responsive adjustments */
 @media screen and (max-width: 768px) {
-  .video-container {
-    max-width: 100%;
-    max-height: 60vh;
+  .main-section {
+    flex-direction: column;
+  }
+
+  .video-container,
+  .right-section {
+    width: 100%;
+    margin-right: 0;
   }
 }
