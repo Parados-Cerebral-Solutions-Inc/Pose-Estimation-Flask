@@ -1,0 +1,81 @@
+/* General body style */
+body {
+  background-color: #1e1e1e;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Style for the camera selection */
+.camera-select-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 8px #1e1e1e;
+}
+
+/* Style for the dropdown */
+select {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  background-color: #1e1e1e;
+  color: white;
+  font-size: 16px;
+}
+
+/* Style for the checkbox */
+.checkbox-container {
+  padding: 10px;
+}
+
+.checkbox-label {
+  margin-left: 8px;
+}
+
+/* Container for video and logo */
+.video-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  max-width: 90%; /* Limit width for large screens */
+  max-height: 80vh; /* Limit height for responsiveness */
+  background-color: #1e1e1e;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px #1e1e1e;
+  overflow: hidden;
+}
+
+/* Style for the video feed */
+.video-feed {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  object-fit: cover; /* Maintain aspect ratio */
+}
+
+/* Style for the logo overlay */
+.logo-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 100px;
+  opacity: 0.8;
+}
+
+/* Adjust the layout for mobile screens */
+@media screen and (max-width: 768px) {
+  .video-container {
+    max-width: 100%;
+    max-height: 60vh;
+  }
+}

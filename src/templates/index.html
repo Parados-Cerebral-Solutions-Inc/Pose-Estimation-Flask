@@ -1,125 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Parados AI</title>
-    <style>
-        /* General body style */
-        body {
-            background-color: #1e1e1e;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
 
-        /* Style for the camera selection */
-        .camera-select-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding: 20px 0;
-            background-color: #1e1e1e;
-            box-shadow: 0 4px 8px #1e1e1e;
-        }
-
-        /* Style for the dropdown */
-        select {
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            background-color: #1e1e1e;
-            color: white;
-            font-size: 16px;
-        }
-
-        /* Container for video and logo */
-        .video-container {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            max-width: 90%; /* Limit width for large screens */
-            max-height: 80vh; /* Limit height for responsiveness */
-            background-color: #1e1e1e;
-            border-radius: 15px;
-            box-shadow: 0 4px 8px #1e1e1e;
-            overflow: hidden;
-        }
-
-        /* Style for the video feed */
-        .video-feed {
-            width: 100%;
-            height: auto;
-            border-radius: 10px;
-            object-fit: cover; /* Maintain aspect ratio */
-        }
-
-        /* Style for the logo overlay */
-        .logo-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 100px;
-            opacity: 0.8;
-        }
-
-        /* Adjust the layout for mobile screens */
-        @media screen and (max-width: 768px) {
-            .video-container {
-                max-width: 100%;
-                max-height: 60vh;
-            }
-        }
-    </style>
-</head>
-<body>
-
+    <!-- Using the time variable passed from Flask without parentheses -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}?v={{ time }}" />
+  </head>
+  <body>
     <!-- Camera selection dropdown at the top -->
     <div class="camera-select-container">
-        <!-- <label for="cameraSelect">Select Camera: </label> -->
-        <select id="cameraSelect"></select>
+      <select id="cameraSelect"></select>
+    </div>
+
+    <!-- Checkbox for face blur -->
+    <div class="checkbox-container">
+      <input type="checkbox" id="faceBlur" />
+      <label for="faceBlur" class="checkbox-label">Face Blur</label>
     </div>
 
     <!-- Video feed container with logo overlay -->
     <div class="video-container">
-        <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed">
-        <img class="logo-overlay" src="{{ url_for('static', filename='logo-b.png') }}" alt="Company Logo">
+      <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed" />
+      <img class="logo-overlay" src="{{ url_for('static', filename='logo-b.png') }}" alt="Company Logo" />
     </div>
 
-    <script>
-        // Get list of cameras and populate the dropdown
-        async function getCameras() {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-            const select = document.getElementById('cameraSelect');
-            videoDevices.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.text = device.label || `Camera ${index + 1}`;
-                select.appendChild(option);
-            });
-
-            // Add event listener to change camera source
-            select.addEventListener('change', function () {
-                const cameraIndex = select.value;
-                fetch(`/set_camera/${cameraIndex}`).then(response => {
-                    if (response.ok) {
-                        console.log('Camera source updated');
-                    }
-                });
-            });
-        }
-
-        // Call the function to populate the camera list
-        getCameras();
-    </script>
-</body>
+    <!-- Script with cache busting timestamp -->
+    <script src="{{ url_for('static', filename='script.js') }}?v={{ time }}" defer></script>
+  </body>
 </html>
