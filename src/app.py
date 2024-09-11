@@ -1,140 +1,129 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
 import cv2
+import numpy as np
+import base64
+from PIL import Image
+import io
 from ultralytics import YOLO
-from flask_cors import CORS
-import os
-import drawing  # Import custom drawing functions from drawing.py
 import mediapipe as mp
+from flask_cors import CORS
 import time
 import torch
-
-print(torch.cuda.is_available())
+import drawing  # Assuming custom drawing functions in drawing.py
 
 app = Flask(__name__)
-app.config['DEBUG'] = True
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-
 CORS(app)  # Enable Cross-Origin Resource Sharing
-print("CORS enabled")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Default camera index
-camera_index = 0
-face_blur_enabled = False  # Track if face blur is enabled
+# Initialize YOLOv8 Model for person detection
+model = YOLO("yolov8n.pt")
+if torch.cuda.is_available():
+    model.to('cuda')
+else:
+    print("Warning: CUDA not available. Using CPU instead.")
+    model.to('cpu')
 
 # MediaPipe Pose Initialization
 mp_pose = mp.solutions.pose.Pose()
 
-# Video stream generator function
+# Global variables for additional features
+face_blur_enabled = False
 
+# Frame processing function
+def process_frame(frame):
+    global face_blur_enabled
 
-def generate_frames():
-    global camera_index, face_blur_enabled
-    cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)  # Use the selected camera
-    print(f'Cam index: {camera_index}')
+    start_time = time.time()  # Start frame time
 
-    # Set resolution (example: 1280x720)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    # Flip the frame horizontally (mirror effect)
+    frame = cv2.flip(frame, 1)
 
-    # Initialize YOLOv8 model for person detection
-    model = YOLO("yolov8n.pt")
-    # Use GPU if available
-    if torch.cuda.is_available():
-        model.to('cuda')
-    else:
-        print("Warning: CUDA not available. Using CPU instead.")
-        model.to('cpu')
+    # Run YOLOv8 object detection
+    results = model(frame)
+    boxes = results[0].boxes.cpu().numpy()  # Extract bounding boxes
 
-    while True:
-        start_time = time.time()  # Start frame time
-        success, frame = cap.read()
-        if not success:
-            print('Not successful')
-            break
+    # Get the center of the frame
+    frame_center_x = frame.shape[1] // 2
+    frame_center_y = frame.shape[0] // 2
 
-        # Flip the frame horizontally (mirror effect)
-        frame = cv2.flip(frame, 1)
+    # Find the box closest to the center of the frame
+    closest_box = None
+    min_distance = float('inf')
 
-        # Run YOLOv8 object detection
-        results = model(frame)
-        boxes = results[0].boxes.cpu().numpy()  # Extract bounding boxes
+    for box in boxes:
+        if box.cls == 0:  # YOLO class 0 corresponds to 'person'
+            # Get the center of the bounding box
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            box_center_x = (x1 + x2) // 2
+            box_center_y = (y1 + y2) // 2
 
-        # Get the center of the frame
-        frame_center_x = frame.shape[1] // 2
-        frame_center_y = frame.shape[0] // 2
+            # Calculate the Euclidean distance from the center of the frame
+            distance = ((box_center_x - frame_center_x) ** 2 + (box_center_y - frame_center_y) ** 2) ** 0.5
 
-        # Find the box closest to the center of the frame
-        closest_box = None
-        min_distance = float('inf')
+            # Check if this box is closer to the center
+            if distance < min_distance:
+                min_distance = distance
+                closest_box = (x1, y1, x2, y2)
 
-        for box in boxes:
-            if box.cls == 0:  # YOLO class 0 corresponds to 'person'
-                # Get the center of the bounding box
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                box_center_x = (x1 + x2) // 2
-                box_center_y = (y1 + y2) // 2
+    # Process only the closest box
+    if closest_box:
+        x1, y1, x2, y2 = closest_box
 
-                # Calculate the Euclidean distance from the center of the frame
-                distance = ((box_center_x - frame_center_x) ** 2 + (box_center_y - frame_center_y) ** 2) ** 0.5
+        # Crop the detected person from the frame
+        person_frame = frame[y1:y2, x1:x2]
 
-                # Check if this box is closer to the center
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_box = (x1, y1, x2, y2)
+        # Convert cropped person frame to RGB for MediaPipe processing
+        person_rgb = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
 
-        # Process only the closest box
-        if closest_box:
-            x1, y1, x2, y2 = closest_box
+        # Apply MediaPipe Pose Estimation
+        results_pose = mp_pose.process(person_rgb)
 
-            # Crop the detected person from the frame
-            person_frame = frame[y1:y2, x1:x2]
+        # Get keypoints as a list of (x, y) pairs
+        if results_pose.pose_landmarks:
+            keypoints = [(lm.x, lm.y) for lm in results_pose.pose_landmarks.landmark]
 
-            # Convert cropped person frame to RGB for MediaPipe processing
-            person_rgb = cv2.cvtColor(person_frame, cv2.COLOR_BGR2RGB)
+            # Draw keypoints and connections using the custom drawing utilities
+            drawing.draw_keypoints_and_connections(person_frame, keypoints)
 
-            # Apply MediaPipe Pose Estimation
-            results_pose = mp_pose.process(person_rgb)
+            # Apply face blur if enabled
+            if face_blur_enabled:
+                drawing.blur_face(person_frame, keypoints)
 
-            # Get keypoints as a list of (x, y) pairs
-            if results_pose.pose_landmarks:
-                keypoints = [(lm.x, lm.y) for lm in results_pose.pose_landmarks.landmark]
+        # Place the processed person frame back into the original frame
+        frame[y1:y2, x1:x2] = person_frame
 
-                # Draw keypoints and connections using the custom drawing utilities
-                drawing.draw_keypoints_and_connections(person_frame, keypoints)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                # Apply face blur only if the checkbox is enabled
-                if face_blur_enabled:
-                    drawing.blur_face(person_frame, keypoints)
+    # Calculate and print total frame processing time
+    end_time = time.time()
+    frame_time = end_time - start_time
+    print(f"Total frame time: {frame_time:.2f} seconds")
 
-            # Place the processed person frame back into the original frame
-            frame[y1:y2, x1:x2] = person_frame
+    return frame_rgb
 
-        # Encode the frame to JPEG
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
+# Handle incoming WebSocket frames
+@socketio.on('frame')
+def handle_frame(data):
+    # Decode base64 image
+    frame_data = data.split(',')[1]
+    frame_bytes = base64.b64decode(frame_data)
+    image = Image.open(io.BytesIO(frame_bytes))
 
-        # Calculate and print total frame processing time
-        end_time = time.time()
-        frame_time = end_time - start_time
-        print(f"Total frame time: {frame_time:.2f} seconds")
+    # Convert image to OpenCV format
+    frame = np.array(image)
 
-        # Yield frame in byte format for streaming
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    # Process frame with YOLO and Pose
+    processed_frame = process_frame(frame)
 
-# Route to set the camera
+    # Encode processed frame back to base64
+    _, buffer = cv2.imencode('.jpg', processed_frame)
+    processed_frame_base64 = base64.b64encode(buffer).decode('utf-8')
 
-
-@app.route('/set_camera/<int:selected_camera_index>', methods=['GET'])
-def set_camera(selected_camera_index):
-    global camera_index
-    camera_index = selected_camera_index  # Update the camera index based on user selection
-    print(f'Selected: {camera_index}')
-    return '', 200  # Return a 200 OK response to confirm
+    # Send processed frame back to client
+    emit('processed_frame', 'data:image/jpeg;base64,' + processed_frame_base64)
 
 # Route to set face blur
-
-
 @app.route('/set_face_blur/<string:state>', methods=['GET'])
 def set_face_blur(state):
     global face_blur_enabled
@@ -142,22 +131,10 @@ def set_face_blur(state):
     print(f'Face blur {state}')
     return '', 200
 
-# Route for the video feed
-
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-    # return True
-
-
-# Main route
-
-
+# Serve the client-side HTML
 @app.route('/')
 def index():
-    return render_template('index.html', time=int(time.time()))
-
+    return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    socketio.run(app, host='0.0.0.0', port=8080)
