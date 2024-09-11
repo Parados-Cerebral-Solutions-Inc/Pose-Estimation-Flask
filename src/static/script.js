@@ -4,7 +4,7 @@ const cameraSelect = document.getElementById('cameraSelect');
 const faceBlur = document.getElementById('faceBlur');
 
 // Dynamically connect to the server based on the current hostname
-const serverHostAddress = `${window.location.protocol}//${window.location.hostname}:8080`;
+const serverHostAddress = `${window.location.protocol}//${window.location.hostname}:5000`;
 const socket = io.connect(serverHostAddress);
 let currentStream;
 
